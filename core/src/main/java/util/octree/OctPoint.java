@@ -18,6 +18,26 @@ public class OctPoint {
         isNull = false;
     }
 
+    public void set(int i, int value) throws IndexOutOfBoundsException {
+        isNull = false;
+        switch (i) {
+            case 0 -> x = value;
+            case 1 -> y = value;
+            case 2 -> z = value;
+            default -> throw new IndexOutOfBoundsException();
+        }
+    }
+
+    public int get(int i) throws IndexOutOfBoundsException, NullPointerException {
+        if(isNull) throw new NullPointerException();
+        return switch (i) {
+            case 0 -> x;
+            case 1 -> y;
+            case 2 -> z;
+            default -> throw new IndexOutOfBoundsException();
+        };
+    }
+
     public OctPoint getMidPoint(OctPoint p2) {
         return getMidPoint(this, p2);
     }
