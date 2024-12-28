@@ -8,10 +8,12 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+import util.Logger;
+import util.math.quaterion.Quaternion;
 import util.octree.Octree;
+import util.math.vector.Vector3;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -33,6 +35,7 @@ public class Main extends ApplicationAdapter {
         }
 
 
+
         octree = new Octree<Boid>(0, 0, 0, 800, 800, 800);
 
         Random r = new Random();
@@ -44,6 +47,12 @@ public class Main extends ApplicationAdapter {
             octree.insert(_x, _y, _z, new Boid(_x, _y, _z, 0));
         }
 
+        Vector3 vector = new Vector3(25,25,25);
+        Logger.log("Normalized vector: " + vector.normalized() + " size: " + vector.normalized().getSize());
+
+        Quaternion quat = new Quaternion();
+        quat.setFromAxisAngle(125.f, 12.f,23.f, Math.toRadians(345.0));
+        Logger.log("Quaternion: " + quat + " AxisAligned: " + quat.getAxisAligned());
 
     }
 
