@@ -51,8 +51,11 @@ public class Main extends ApplicationAdapter {
         Logger.log("Normalized vector: " + vector.normalized() + " size: " + vector.normalized().getSize());
 
         Quaternion quat = new Quaternion();
-        quat.setFromAxisAngle(125.f, 12.f,23.f, Math.toRadians(345.0));
-        Logger.log("Quaternion: " + quat + " AxisAligned: " + quat.getAxisAligned());
+        Logger.log("Quaternion: " + quat);
+        quat.setFromEulerAngles(Math.toRadians(125.f), Math.toRadians(12.f), Math.toRadians(23.f));
+        Logger.log("Quaternion: " + quat);
+        Logger.log("Quaternion Euler: " + quat.getFromEulerAngles());
+
 
     }
 
