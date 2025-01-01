@@ -38,23 +38,33 @@ public class Main extends ApplicationAdapter {
 
         octree = new Octree<Boid>(0, 0, 0, 800, 800, 800);
 
-        Random r = new Random();
+        /*Random r = new Random();
         for(int i = 0; i < 1_500; i++) {
-            int _x = r.nextInt(800);
-            int _y = r.nextInt(800);
-            int _z = r.nextInt(800);
+            int _x = r.nextInt(1, 800);
+            int _y = r.nextInt(1, 800);
+            int _z = r.nextInt(1, 800);
 
-            octree.insert(_x, _y, _z, new Boid(_x, _y, _z, 0));
-        }
+            Quaternion q = new Quaternion();
+            q.setFromEulerAngles(r.nextInt(360), r.nextInt(360), r.nextInt(360));
+            octree.insert(_x, _y, _z, new Boid(_x, _y, _z, q));
+        }*/
+
+        Quaternion q = new Quaternion();
+        q.setFromEulerAngles(0, 0, 180);
+        octree.insert(10, 10, 400, new Boid(410, 410, 410, q));
+
+        q = new Quaternion();
+        q.setFromEulerAngles(0, 0, 45);
+        octree.insert(790, 790, 400, new Boid(420, 420, 410, q));
+        q = new Quaternion();
+        q.setFromEulerAngles(0, 0, 90);
+        octree.insert(790, 0, 400, new Boid(400, 400, 410, q));
 
         Vector3 vector = new Vector3(25,25,25);
         Logger.log("Normalized vector: " + vector.normalized() + " size: " + vector.normalized().getSize());
 
-        Quaternion quat = new Quaternion();
-        Logger.log("Quaternion: " + quat);
-        quat.setFromEulerAngles(Math.toRadians(125.f), Math.toRadians(12.f), Math.toRadians(23.f));
-        Logger.log("Quaternion: " + quat);
-        Logger.log("Quaternion Euler: " + quat.getFromEulerAngles());
+
+
 
 
     }
@@ -66,8 +76,13 @@ public class Main extends ApplicationAdapter {
 
         process();
 
+
         octree.foreach(obj -> {
-            batch.draw(image, obj.getX(), obj.getY(), 0, 0, 8, 8, 1, 1, obj.rot - 45);
+            Quaternion rot = new Quaternion();
+            rot.setFromEulerAngles(0, 0, 0);
+            Quaternion q = Quaternion.lookAtFromPoints(obj.position, new Vector3(Gdx.input.getX(),Gdx.graphics.getHeight() - Gdx.input.getY(), 400));
+            //rot = rot.activeRotation(q.getFromEulerAngles());
+            batch.draw(image, obj.getPosition().getX(), obj.getPosition().getY(), 0, 0, 8, 8, 1, 1, q.getFromEulerAngles().getZ() - 45);
         });
 
         font.draw(batch, "Upper left, FPS=" + Gdx.graphics.getFramesPerSecond(), 0, 10);
@@ -76,29 +91,12 @@ public class Main extends ApplicationAdapter {
     }
 
     private void process() {
+
         octree.foreach(boid -> {
-            // rule of cohesion
-            ArrayList<Boid> neighbours = octree.getNeighbors(boid.getX(), boid.getY(), boid.getZ(), 25);
-
-            if(!neighbours.isEmpty()) {
-                int aX = 0;
-                int aY = 0;
-                int aZ = 0;
-
-                for (Boid neighbour : neighbours) {
-                    aX += neighbour.getX();
-                    aY += neighbour.getY();
-                    aZ += neighbour.getZ();
-                }
-
-                aX /= neighbours.size();
-                aY /= neighbours.size();
-                aZ /= neighbours.size();
-
-                Vector3 avgPos = new Vector3(aX, aY, aZ);
-                Vector3 boidPos = new Vector3(boid.getX(), boid.getY(), boid.getZ());
-            }
+            //boid.process(Gdx.graphics.getDeltaTime());
         });
+
+
     }
 
     @Override

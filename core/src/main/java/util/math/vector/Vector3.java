@@ -1,6 +1,9 @@
 package util.math.vector;
 
 public class Vector3 {
+    static public final Vector3 UP = new Vector3(0, 0, 1);
+    static public final Vector3 FORWARD = new Vector3(0, 1, 0);
+    static public final Vector3 RIGHT = new Vector3(1, 0, 0);
     float x;
     float y;
     float z;
@@ -51,18 +54,19 @@ public class Vector3 {
         this.z = z;
     }
 
-    public void add(float x, float y, float z) {
+    public Vector3 add(float x, float y, float z) {
         this.x += x;
         this.y += y;
         this.z += z;
+        return this;
     }
 
-    public void add(float val) {
-        add(val, val, val);
+    public Vector3 add(float val) {
+        return add(val, val, val);
     }
 
-    public void add(Vector3 vec2) {
-        add(vec2.x, vec2.y, vec2.z);
+    public Vector3 add(Vector3 vec2) {
+        return add(vec2.x, vec2.y, vec2.z);
     }
 
     static public Vector3 add(Vector3 vec1, Vector3 vec2) {
@@ -73,19 +77,19 @@ public class Vector3 {
         return new Vector3(vec1.x + val, vec1.y + val, vec1.z + val);
     }
 
-    public void sub(float x, float y, float z) {
+    public Vector3 sub(float x, float y, float z) {
         this.x -= x;
         this.y -= y;
         this.z -= z;
+        return this;
     }
 
-    public void sub(float val) {
-        sub(val, val, val);
+    public Vector3 sub(float val) {
+        return sub(val, val, val);
     }
 
-    public void sub(Vector3 vec2) {
-        sub(vec2.x, vec2.y, vec2.z);
-
+    public Vector3 sub(Vector3 vec2) {
+        return sub(vec2.x, vec2.y, vec2.z);
     }
 
     static public Vector3 sub(Vector3 vec1, Vector3 vec2) {
@@ -96,18 +100,19 @@ public class Vector3 {
         return new Vector3(vec1.x - val, vec1.y - val, vec1.z - val);
     }
 
-    void mul(float x, float y, float z) {
+    public Vector3 mul(float x, float y, float z) {
         this.x *= x;
         this.y *= y;
         this.z *= z;
+        return this;
     }
 
-    public void mul(float val) {
-        mul(val, val, val);
+    public Vector3 mul(float val) {
+        return mul(val, val, val);
     }
 
-    public void mul(Vector3 vec2) {
-        mul(vec2.x, vec2.y, vec2.z);
+    public Vector3 mul(Vector3 vec2) {
+        return mul(vec2.x, vec2.y, vec2.z);
     }
 
     static public Vector3 mul(Vector3 vec1, Vector3 vec2) {
@@ -118,18 +123,19 @@ public class Vector3 {
         return new Vector3(vec1.x * val, vec1.y * val, vec1.z * val);
     }
 
-    public void div(float x, float y, float z) {
+    public Vector3 div(float x, float y, float z) {
         this.x /= x;
         this.y /= y;
         this.z /= z;
+        return this;
     }
 
-    public void div(float val) {
-        div(val, val, val);
+    public Vector3 div(float val) {
+        return div(val, val, val);
     }
 
-    public void div(Vector3 vec2) {
-        div(vec2.x, vec2.y, vec2.z);
+    public Vector3 div(Vector3 vec2) {
+        return div(vec2.x, vec2.y, vec2.z);
     }
 
     static public Vector3 div(Vector3 vec1, Vector3 vec2) {
@@ -141,6 +147,9 @@ public class Vector3 {
     }
 
     public Vector3 normalized(){
+        float size = getSize();
+        if(getSize()  <= 0.01) return this;
+        if(getSize() - 1 <= 0.01) return this;
         return div(this, getSize());
     }
 

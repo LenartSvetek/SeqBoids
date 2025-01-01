@@ -1,65 +1,39 @@
 package famnit.seq.boids;
 
+import util.Logger;
+import util.math.quaterion.Quaternion;
+import util.math.vector.Vector3;
+
 public class Boid {
-    int x;
-    int y;
-    int z;
-    int rot;
+    Vector3 position;
+    Quaternion rot;
 
-    int movementSpeed = 10; // pixels/second
+    float movementSpeed = 100.f; // pixels/second
 
 
 
-    Boid(int x, int y, int z, int rot) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+    Boid(float x, float y, float z, Quaternion rot) {
+        position = new Vector3(x,y,z);
         this.rot = rot;
     }
 
     public void process(float deltaTime){
 
-    }
 
-    public int getX() {
-        return x;
-    }
-
-    public void setX(int x) {
-        this.x = x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public void setY(int y) {
-        this.y = y;
-    }
-
-    public int getZ() {
-        return z;
-    }
-
-    public void setZ(int z) {
-        this.z = z;
-    }
-
-    public void set(int i, int value) throws IndexOutOfBoundsException {
-        switch (i) {
-            case 0 -> x = value;
-            case 1 -> y = value;
-            case 2 -> z = value;
-            default -> throw new IndexOutOfBoundsException();
+        Vector3 direction = rot.activeRotation(Vector3.FORWARD).normalized();
+        if(rot.isUnit()) {
+            direction = new Vector3(1,0,0);
         }
+
+        position.add(direction.mul(movementSpeed * deltaTime));
+        Logger.log("position: " + position + " direction: " + direction + " dirsize: " + direction.getSize());
     }
 
-    public int get(int i) throws IndexOutOfBoundsException {
-        return switch (i) {
-            case 0 -> x;
-            case 1 -> y;
-            case 2 -> z;
-            default -> throw new IndexOutOfBoundsException();
-        };
+    public Vector3 getPosition() {
+        return position;
+    }
+
+    public void setPosition(Vector3 position) {
+        this.position = position;
     }
 }
