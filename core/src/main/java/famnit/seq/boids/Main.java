@@ -51,14 +51,14 @@ public class Main extends ApplicationAdapter {
 
         Quaternion q = new Quaternion();
         q.setFromEulerAngles(0, 0, 180);
-        octree.insert(10, 10, 400, new Boid(410, 410, 410, q));
+        octree.insert(410, 410, 400, new Boid(410, 410, 400, q));
 
         q = new Quaternion();
         q.setFromEulerAngles(0, 0, 45);
-        octree.insert(790, 790, 400, new Boid(420, 420, 410, q));
+        octree.insert(420, 420, 400, new Boid(420, 420, 400, q));
         q = new Quaternion();
         q.setFromEulerAngles(0, 0, 90);
-        octree.insert(790, 0, 400, new Boid(400, 400, 410, q));
+        octree.insert(400, 400, 400, new Boid(400, 400, 400, q));
 
         Vector3 vector = new Vector3(25,25,25);
         Logger.log("Normalized vector: " + vector.normalized() + " size: " + vector.normalized().getSize());
