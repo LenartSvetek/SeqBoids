@@ -11,12 +11,13 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import util.Logger;
-import util.math.quaterion.Quaternion;
+import util.math.EulerAngles;
 import util.octree.Octree;
 import util.math.vector.Vector3;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Vector;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
@@ -38,30 +39,26 @@ public class Main extends ApplicationAdapter {
 
         octree = new Octree<Boid>(0, 0, 0, 800, 800, 800);
 
-        /*Random r = new Random();
-        for(int i = 0; i < 1_500; i++) {
+        Random r = new Random();
+        for(int i = 0; i < 10_000; i++) {
             int _x = r.nextInt(1, 800);
             int _y = r.nextInt(1, 800);
             int _z = r.nextInt(1, 800);
 
-            Quaternion q = new Quaternion();
-            q.setFromEulerAngles(r.nextInt(360), r.nextInt(360), r.nextInt(360));
+            EulerAngles q = new EulerAngles();
+
             octree.insert(_x, _y, _z, new Boid(_x, _y, _z, q));
-        }*/
+        }
 
-        Quaternion q = new Quaternion();
-        q.setFromEulerAngles(0, 0, 180);
-        octree.insert(410, 410, 400, new Boid(410, 410, 400, q));
+        EulerAngles q = new EulerAngles();
+        octree.insert(410, 410, 399, new Boid(410, 410, 399, q));
 
-        q = new Quaternion();
-        q.setFromEulerAngles(0, 0, 45);
+        q = new EulerAngles();
         octree.insert(420, 420, 400, new Boid(420, 420, 400, q));
-        q = new Quaternion();
-        q.setFromEulerAngles(0, 0, 90);
+        q = new EulerAngles();
         octree.insert(400, 400, 400, new Boid(400, 400, 400, q));
 
         Vector3 vector = new Vector3(25,25,25);
-        Logger.log("Normalized vector: " + vector.normalized() + " size: " + vector.normalized().getSize());
 
 
 
@@ -78,11 +75,12 @@ public class Main extends ApplicationAdapter {
 
 
         octree.foreach(obj -> {
-            Quaternion rot = new Quaternion();
-            rot.setFromEulerAngles(0, 0, 0);
-            Quaternion q = Quaternion.lookAtFromPoints(obj.position, new Vector3(Gdx.input.getX(),Gdx.graphics.getHeight() - Gdx.input.getY(), 400));
-            //rot = rot.activeRotation(q.getFromEulerAngles());
-            batch.draw(image, obj.getPosition().getX(), obj.getPosition().getY(), 0, 0, 8, 8, 1, 1, q.getFromEulerAngles().getZ() - 45);
+
+
+
+            //Logger.log("boids pos: " + obj.getPosition() + " mousePos: " + new Vector3(Gdx.input.getX(),Gdx.graphics.getHeight() - Gdx.input.getY(), 400));
+
+            batch.draw(image, obj.getPosition().getX(), obj.getPosition().getY(), 4, 4, 8, 8, 1, 1, obj.getRot().getYaw() - 45);
         });
 
         font.draw(batch, "Upper left, FPS=" + Gdx.graphics.getFramesPerSecond(), 0, 10);
@@ -91,11 +89,34 @@ public class Main extends ApplicationAdapter {
     }
 
     private void process() {
+        Vector3 mousePos = new Vector3(Gdx.input.getX(),Gdx.graphics.getHeight() - Gdx.input.getY(), 400);
+        Octree<Boid> newOctree = new Octree<Boid>(0, 0, 0, 800, 800, 800);
 
         octree.foreach(boid -> {
-            //boid.process(Gdx.graphics.getDeltaTime());
+            EulerAngles q = EulerAngles.getEulerAnglesBetweenTwoPoints(boid.position, mousePos);
+
+            boid.setRot(q);
+            Vector3 pos = boid.getPosition();
+
+            Boid newBoid = new Boid(pos.getX(), pos.getY(), pos.getZ(), boid.getRot());
+
+
+
+            ArrayList<Boid> tooClose = octree.getNeighbors((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), 20);
+
+            if(!tooClose.isEmpty()) {
+                EulerAngles rot = new EulerAngles();
+                for (Boid value : tooClose) {
+                    rot = EulerAngles.sum(rot, EulerAngles.getEulerAnglesBetweenTwoPoints(pos, value.getPosition()));
+                }
+                newBoid.setRot(rot.inverse());
+            }
+            newBoid.process(Gdx.graphics.getDeltaTime());
+
+            newOctree.insert((int)newBoid.getPosition().getX(), (int)newBoid.getPosition().getY(), (int)newBoid.getPosition().getZ(), newBoid);
         });
 
+        octree = newOctree;
 
     }
 
