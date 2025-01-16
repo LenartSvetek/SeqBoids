@@ -61,19 +61,19 @@ public class Vector3 {
         return this;
     }
 
-    public Vector3 add(float val) {
+    public Vector3 sum(float val) {
         return add(val, val, val);
     }
 
-    public Vector3 add(Vector3 vec2) {
+    public Vector3 sum(Vector3 vec2) {
         return add(vec2.x, vec2.y, vec2.z);
     }
 
-    static public Vector3 add(Vector3 vec1, Vector3 vec2) {
+    static public Vector3 sum(Vector3 vec1, Vector3 vec2) {
         return new Vector3(vec1.x + vec2.x, vec1.y + vec2.y, vec1.z + vec2.z);
     }
 
-    static public Vector3 add(Vector3 vec1, float val) {
+    static public Vector3 sum(Vector3 vec1, float val) {
         return new Vector3(vec1.x + val, vec1.y + val, vec1.z + val);
     }
 
