@@ -32,22 +32,19 @@ public class Main extends ApplicationAdapter {
             image = new TextureRegion(new Texture("bird.png"));
             font = new BitmapFont();
         }
-
-
-
         octree = new Octree<Boid>(0, 0, 0, 800, 800, 800);
 
         Random r = new Random();
         for(int i = 0; i < 500; i++) {
-            int _x = r.nextInt(1, 800);
-            int _y = r.nextInt(1, 800);
-            int _z = r.nextInt(1, 800);
+            int _x = r.nextInt(150, 800 - 150);
+            int _y = r.nextInt(150, 800 - 150);
+            int _z = r.nextInt(150, 800 - 150);
 
             EulerAngles q = new EulerAngles(r.nextInt(360), r.nextInt(360), r.nextInt(360));
 
             octree.insert(_x, _y, _z, new Boid(_x, _y, _z, q));
         }
-
+/*
         EulerAngles q = new EulerAngles();
         octree.insert(410, 410, 399, new Boid(410, 410, 399, q));
 
@@ -55,9 +52,7 @@ public class Main extends ApplicationAdapter {
         octree.insert(420, 420, 400, new Boid(420, 420, 400, q));
         q = new EulerAngles();
         octree.insert(400, 400, 400, new Boid(400, 400, 400, q));
-
-        Vector3 vector = new Vector3(25,25,25);
-
+*/
 
 
 
@@ -73,12 +68,10 @@ public class Main extends ApplicationAdapter {
 
 
         octree.foreach(obj -> {
+            float scale = (((800 - obj.getPosition().getZ()) / 800.f) + 0.5f) * 2;
 
 
-
-            //Logger.log("boids pos: " + obj.getPosition() + " mousePos: " + new Vector3(Gdx.input.getX(),Gdx.graphics.getHeight() - Gdx.input.getY(), 400));
-
-            batch.draw(image, obj.getPosition().getX(), obj.getPosition().getY(), 4, 4, 8, 8, 1, 1, obj.getRot().getYaw() - 45);
+            batch.draw(image, obj.getPosition().getX(), obj.getPosition().getY(), 4, 4, 8, 8, scale, scale, obj.getRot().getYaw() - 45);
         });
 
         font.draw(batch, "Upper left, FPS=" + Gdx.graphics.getFramesPerSecond(), 0, 10);
@@ -87,17 +80,12 @@ public class Main extends ApplicationAdapter {
     }
 
     private void process() {
-        Vector3 mousePos = new Vector3(Gdx.input.getX(),Gdx.graphics.getHeight() - Gdx.input.getY(), 400);
-        Vector3 center = new Vector3(400, 400, 400);
         Octree<Boid> newOctree = new Octree<Boid>(0, 0, 0, 800, 800, 800);
 
-        int visualRange = 100;
-        int avoidRange = 40;
+        int visualRange = 40;
+        int avoidRange = 20;
 
         octree.foreach(boid -> {
-
-            EulerAngles q = EulerAngles.getEulerAnglesBetweenTwoPoints(boid.position, center);
-
             Vector3 pos = boid.getPosition();
 
             Boid newBoid = new Boid(boid);
@@ -185,7 +173,7 @@ public class Main extends ApplicationAdapter {
     }
 
     private void limitSpeed(Boid boid) {
-        float speedLimit = 250;
+        float speedLimit = 1000;
         Vector3 deltaPos = boid.getDeltaPosition();
         float speed = (float)Math.sqrt(Math.pow(deltaPos.getX(), 2) + Math.pow(deltaPos.getY(), 2));
 
@@ -200,7 +188,7 @@ public class Main extends ApplicationAdapter {
 
     private void keepWithinBounds(Boid boid) {
         float margin = 150;
-        float turnFactor = 1;
+        float turnFactor = 0.05f;
 
         Vector3 deltaPos = boid.getDeltaPosition();
         Vector3 boidPos = boid.getPosition();
