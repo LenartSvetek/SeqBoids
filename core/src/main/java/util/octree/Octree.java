@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.Consumer;
 
+/**
+ * Tree data structure for saving data in 3D space
+ * @param <T> element type
+ * @author <a href="https://github.com/LenartSvetek">Lenart Svetek</a>
+ */
 public class Octree<T> {
     OctPoint topFrontRight = null;
     OctPoint bottomBackLeft = null;
@@ -214,6 +219,12 @@ public class Octree<T> {
         return oct;
     }
 
+
+    /**
+     * It loops from bottom back left oct to top front right oct<br/>
+     * <b>Reason:</b> 2D rendering where z-cord is displayed by rendering position
+     * @param action function to apply on objects
+     */
     public void foreach(Consumer<T> action) {
         // Apply action to objects at this node if present
         if (objects != null && !objects.isEmpty()) {
@@ -224,9 +235,9 @@ public class Octree<T> {
 
         // Recursively call foreach on child octrees
         if (octs != null) {
-            for (Octree<T> child : octs) {
-                if (child != null) {
-                    child.foreach(action);
+            for (int i = octs.size() - 1; i >= 0; i--) {
+                if (octs.get(i) != null) {
+                    octs.get(i).foreach(action);
                 }
             }
         }

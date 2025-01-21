@@ -68,7 +68,7 @@ public class Main extends ApplicationAdapter {
 
 
         octree.foreach(obj -> {
-            float scale = (((800 - obj.getPosition().getZ()) / 800.f) + 0.5f) * 2;
+            float scale = ((obj.getPosition().getZ() / 800.f) + 0.5f) * 2;
 
 
             batch.draw(image, obj.getPosition().getX(), obj.getPosition().getY(), 4, 4, 8, 8, scale, scale, obj.getRot().getYaw() - 45);
