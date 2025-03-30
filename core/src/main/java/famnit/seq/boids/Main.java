@@ -24,6 +24,9 @@ public class Main extends ApplicationAdapter {
     Octree<Boid> octree;
     BitmapFont font;
 
+    int[] mapSize = {800, 800, 800};
+    int bufferZone = 100;
+
     @Override
     public void create() {
 
@@ -32,7 +35,7 @@ public class Main extends ApplicationAdapter {
             image = new TextureRegion(new Texture("bird.png"));
             font = new BitmapFont();
         }
-        octree = new Octree<Boid>(0, 0, 0, 800, 800, 800);
+        octree = new Octree<Boid>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
 
         Random r = new Random();
         for(int i = 0; i < 500; i++) {
@@ -68,10 +71,13 @@ public class Main extends ApplicationAdapter {
 
 
         octree.foreach(obj -> {
-            float scale = ((obj.getPosition().getZ() / 800.f) + 0.5f) * 2;
+            if(    obj.position.getX() >= -10 && obj.position.getX() <= mapSize[0] + 10
+                && obj.position.getY() >= -10 && obj.position.getY() <= mapSize[1] + 10
+            ) {
+                float scale = ((obj.getPosition().getZ() / 800.f) + 0.5f) * 2;
 
-
-            batch.draw(image, obj.getPosition().getX(), obj.getPosition().getY(), 4, 4, 8, 8, scale, scale, obj.getRot().getYaw() - 45);
+                batch.draw(image, obj.getPosition().getX(), obj.getPosition().getY(), 4, 4, 8, 8, scale, scale, obj.getRot().getYaw() - 45);
+            }
         });
 
         font.draw(batch, "Upper left, FPS=" + Gdx.graphics.getFramesPerSecond(), 0, 10);
@@ -80,7 +86,7 @@ public class Main extends ApplicationAdapter {
     }
 
     private void process() {
-        Octree<Boid> newOctree = new Octree<Boid>(0, 0, 0, 800, 800, 800);
+        Octree<Boid> newOctree = new Octree<Boid>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
 
         int visualRange = 40;
         int avoidRange = 20;
@@ -97,6 +103,7 @@ public class Main extends ApplicationAdapter {
             separation(boid, tooClose, newBoid);
             alignment(boid, otherBoids, newBoid);
 
+            nudgeDesiredSpeed(newBoid);
             limitSpeed(newBoid);
             keepWithinBounds(newBoid);
 
@@ -170,6 +177,18 @@ public class Main extends ApplicationAdapter {
         deltaPos.setZ(deltaPos.getZ() + (avgDX.getZ() - deltaPos.getZ()) * alignmentFactor);
 
         newBoid.setDeltaPosition(deltaPos);
+    }
+
+    private void nudgeDesiredSpeed(Boid boid) {
+        float nudgeFactor = 0.05f * Gdx.graphics.getDeltaTime();
+
+        float desiredSpeed = boid.desiredSpeed;
+        Vector3 deltaPos = boid.getDeltaPosition();
+        float speed = (float)Math.sqrt(Math.pow(deltaPos.getX(), 2) + Math.pow(deltaPos.getY(), 2));
+
+        if(speed < desiredSpeed) {
+            deltaPos.sum(Vector3.mul(deltaPos, nudgeFactor));
+        }
     }
 
     private void limitSpeed(Boid boid) {

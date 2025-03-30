@@ -12,7 +12,7 @@ public class Boid {
     EulerAngles rot;
     Vector3 rotSensitivity = new Vector3(100, 100, 100);
 
-    float movementSpeed = 1000.f; // pixels/second
+    float desiredSpeed = 25.f; // pixels/second
 
 
 
@@ -25,7 +25,7 @@ public class Boid {
         deltaPosition.setZ((float)(Math.sin(rot.getPitchRadians())));
 
 
-        deltaPosition.mul(new Random().nextFloat(100));
+        deltaPosition.mul(desiredSpeed);
     }
 
     Boid(Boid boid) {
