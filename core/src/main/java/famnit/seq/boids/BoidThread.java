@@ -18,21 +18,22 @@ public class BoidThread extends Thread{
     final int to;
 
     ArrayList<Boid> _boidsArr;
+    Octree<Integer> _boids;
 
-    public BoidThread(ArrayList<Boid> boidsArr, Octree<Integer> boids, int from, int to) {
+    public BoidThread(ArrayList<Boid> boidsArr, Octree<Integer> boids, int from, int to, String name, ArrayList<Boid> _boidsArr, Octree<Integer> _boids) {
+        super(name);
         this.boidsArr = boidsArr;
         this.boids = boids;
 
         this.from = from;
         this.to = to;
 
-        this._boidsArr = new ArrayList<>();
+        this._boidsArr = _boidsArr;
+        this._boids = _boids;
     }
 
     @Override
     public void run() {
-        super.run();
-
         for(int i = from; i < to; i++) {
             Boid boid = boidsArr.get(i);
             Vector3 pos = boid.getPosition();
@@ -56,7 +57,13 @@ public class BoidThread extends Thread{
 
             newBoid.process(Gdx.graphics.getDeltaTime());
 
-            _boidsArr.add(newBoid);
+            int index = -1;
+            synchronized (_boidsArr) {
+                _boidsArr.add(newBoid);
+                index = _boidsArr.size() - 1;
+            }
+            pos = newBoid.getPosition();
+            _boids.insert((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), index);
         }
 
 
@@ -141,6 +148,8 @@ public class BoidThread extends Thread{
         if(speed < desiredSpeed) {
             deltaPos.sum(Vector3.mul(deltaPos, nudgeFactor));
         }
+
+        boid.setDeltaPosition(deltaPos);
     }
 
     private void limitSpeed(Boid boid) {

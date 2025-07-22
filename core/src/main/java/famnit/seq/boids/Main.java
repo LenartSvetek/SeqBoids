@@ -106,9 +106,10 @@ public class Main extends ApplicationAdapter {
         for (int i = 0; i < CPU_CORES; i++) {
 
             if(i != CPU_CORES - 1)
-                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, (i + 1) * numOfBoidsPerThread);
+                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, (i + 1) * numOfBoidsPerThread, "BoidsThread-"+i, newBoidArr, newOctree);
             else
-                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, boidsArr.size());
+                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, boidsArr.size(), "BoidsThread-"+i, newBoidArr, newOctree);
+
 
             THREADS[i].start();
         }
@@ -117,16 +118,18 @@ public class Main extends ApplicationAdapter {
             try {
                 THREADS[i].join();
 
-                for(Boid boid : THREADS[i].GetBoidsArr()) {
-                    newBoidArr.add(boid);
-                    Vector3 pos = boid.getPosition();
-                    newOctree.insert((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), newBoidArr.size() - 1);
-                }
+//                for(Boid boid : THREADS[i].GetBoidsArr()) {
+//                    newBoidArr.add(boid);
+//                    Vector3 pos = boid.getPosition();
+//                    newOctree.insert((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), newBoidArr.size() - 1);
+//                }
             }
             catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+
+
 
 //        octree.foreach(boidIndex -> {
 //            Boid boid = boidsArr.get(boidIndex);

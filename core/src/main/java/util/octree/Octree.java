@@ -39,7 +39,11 @@ public class Octree<T> {
         topFrontRight = new OctPoint(xh, yh, zh);
         bottomBackLeft = new OctPoint(xl, yl, zl);
 
-        octs = new ArrayList<Octree<T>>(Collections.nCopies(8, new Octree<T>()));
+        octs = new ArrayList<>(8);
+        for (int i = 0; i < 8; i++) {
+            octs.add(new Octree<>());
+        }
+
         point = null;
     }
 
@@ -60,6 +64,7 @@ public class Octree<T> {
     }
 
     public void insert(int x, int y, int z, T object) {
+        synchronized (this) {
             if(topFrontRight.isInBoundsBigger(x, y, z) || bottomBackLeft.isInBoundsSmaller(x, y, z)) return;
 
             OctPoint midPoint = OctPoint.getMidPoint(bottomBackLeft, topFrontRight);
@@ -101,9 +106,11 @@ public class Octree<T> {
                 octs.get(oct).insert(_x, _y, _z, _objects);
                 return;
             }
+        }
     }
 
     private void insert(int x, int y, int z, ArrayList<T> objects) {
+        synchronized (this) {
             if(topFrontRight.isInBoundsBigger(x, y, z) || bottomBackLeft.isInBoundsSmaller(x, y, z)) return;
 
             OctPoint midPoint = OctPoint.getMidPoint(bottomBackLeft, topFrontRight);
@@ -145,6 +152,7 @@ public class Octree<T> {
                 octs.get(oct).insert(_x, _y, _z, _objects);
                 return;
             }
+        }
     }
 
     public ArrayList<T> get(int x, int y, int z) {
@@ -179,13 +187,12 @@ public class Octree<T> {
                 else closest.set(i, topFrontRight.get(i));
             }
 
-            if(
-                    Math.pow(closest.get(0) - radiusCenter.get(0), 2) +
-                    Math.pow(closest.get(1) - radiusCenter.get(1), 2) +
-                    Math.pow(closest.get(2) - radiusCenter.get(2), 2)
-                    > Math.pow(r, 2)) {
-                continue;
-            }
+            int dx = closest.get(0) - radiusCenter.get(0);
+            int dy = closest.get(1) - radiusCenter.get(1);
+            int dz = closest.get(2) - radiusCenter.get(2);
+            int distSquared = dx * dx + dy * dy + dz * dz;
+            int rSquared = r * r;
+            if (distSquared > rSquared) continue;
 
             if(_oct.point == null) {
                 neighbours.addAll(_oct.getNeighbors(x, y, z, r));
