@@ -16,16 +16,22 @@ import util.math.vector.Vector3;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
+    static int CPU_CORES = Runtime.getRuntime().availableProcessors();
+    static BoidThread[] THREADS = new BoidThread[CPU_CORES];
+
     private SpriteBatch batch;
     private TextureRegion image;
-    Octree<Boid> octree;
+    Octree<Integer> octree;
+    ArrayList<Boid> boidsArr;
     BitmapFont font;
 
     int[] mapSize = {800, 800, 800};
     int bufferZone = 100;
+    int numOfBoids = 500;
 
     @Override
     public void create() {
@@ -35,17 +41,19 @@ public class Main extends ApplicationAdapter {
             image = new TextureRegion(new Texture("bird.png"));
             font = new BitmapFont();
         }
-        octree = new Octree<Boid>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
+        octree = new Octree<Integer>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
+        boidsArr = new ArrayList<Boid>(numOfBoids);
 
         Random r = new Random();
-        for(int i = 0; i < 500; i++) {
+        for(int i = 0; i < numOfBoids; i++) {
             int _x = r.nextInt(150, 800 - 150);
             int _y = r.nextInt(150, 800 - 150);
             int _z = r.nextInt(150, 800 - 150);
 
             EulerAngles q = new EulerAngles(r.nextInt(360), r.nextInt(360), r.nextInt(360));
 
-            octree.insert(_x, _y, _z, new Boid(_x, _y, _z, q));
+            octree.insert(_x, _y, _z, i);
+            boidsArr.add(new Boid(_x, _y, _z, q));
         }
 /*
         EulerAngles q = new EulerAngles();
@@ -70,7 +78,8 @@ public class Main extends ApplicationAdapter {
         process();
 
 
-        octree.foreach(obj -> {
+        octree.foreach(boidIndex -> {
+            Boid obj = boidsArr.get(boidIndex);
             if(    obj.position.getX() >= -10 && obj.position.getX() <= mapSize[0] + 10
                 && obj.position.getY() >= -10 && obj.position.getY() <= mapSize[1] + 10
             ) {
@@ -86,147 +95,74 @@ public class Main extends ApplicationAdapter {
     }
 
     private void process() {
-        Octree<Boid> newOctree = new Octree<Boid>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
-
+        Octree<Integer> newOctree = new Octree<Integer>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
+        ArrayList<Boid> newBoidArr = new ArrayList<>();
         int visualRange = 40;
         int avoidRange = 20;
 
-        octree.foreach(boid -> {
-            Vector3 pos = boid.getPosition();
 
-            Boid newBoid = new Boid(boid);
+        int numOfBoidsPerThread = Math.ceilDiv(boidsArr.size(), CPU_CORES);
 
-            ArrayList<Boid> otherBoids = octree.getNeighbors((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), visualRange);
-            ArrayList<Boid> tooClose = octree.getNeighbors((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), avoidRange);
+        for (int i = 0; i < CPU_CORES; i++) {
 
-            coherence(boid, otherBoids, newBoid);
-            separation(boid, tooClose, newBoid);
-            alignment(boid, otherBoids, newBoid);
+            if(i != CPU_CORES - 1)
+                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, (i + 1) * numOfBoidsPerThread);
+            else
+                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, boidsArr.size());
 
-            nudgeDesiredSpeed(newBoid);
-            limitSpeed(newBoid);
-            keepWithinBounds(newBoid);
+            THREADS[i].start();
+        }
 
-            newBoid.process(Gdx.graphics.getDeltaTime());
+        for(int i = 0; i < CPU_CORES; i++) {
+            try {
+                THREADS[i].join();
 
-            newOctree.insert((int)newBoid.getPosition().getX(), (int)newBoid.getPosition().getY(), (int)newBoid.getPosition().getZ(), newBoid);
-        });
+                for(Boid boid : THREADS[i].GetBoidsArr()) {
+                    newBoidArr.add(boid);
+                    Vector3 pos = boid.getPosition();
+                    newOctree.insert((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), newBoidArr.size() - 1);
+                }
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+//        octree.foreach(boidIndex -> {
+//            Boid boid = boidsArr.get(boidIndex);
+//            Vector3 pos = boid.getPosition();
+//
+//            Boid newBoid = new Boid(boid);
+//
+//
+//
+//            ArrayList<Boid> otherBoids = octree.getNeighbors((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), visualRange).stream().map((boidI) -> boidsArr.get(boidI)).collect(Collectors.toCollection(ArrayList::new));
+//            ArrayList<Boid> tooClose = octree.getNeighbors((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), avoidRange).stream().map((boidI) -> boidsArr.get(boidI)).collect(Collectors.toCollection(ArrayList::new));
+//
+//            //System.out.println(otherBoids.stream().count());
+//
+//            coherence(boid, otherBoids, newBoid);
+//            separation(boid, tooClose, newBoid);
+//            alignment(boid, otherBoids, newBoid);
+//
+//            nudgeDesiredSpeed(newBoid);
+//            limitSpeed(newBoid);
+//            keepWithinBounds(newBoid);
+//
+//            newBoid.process(Gdx.graphics.getDeltaTime());
+//
+//            synchronized (newBoidArr) {
+//                newBoidArr.add(newBoid);
+//                newOctree.insert((int)newBoid.getPosition().getX(), (int)newBoid.getPosition().getY(), (int)newBoid.getPosition().getZ(), newBoidArr.size() - 1);
+//            }
+//
+//        });
 
         octree = newOctree;
-
+        boidsArr = newBoidArr;
     }
 
-    private void coherence(Boid boid, ArrayList<Boid> otherBoids, Boid newBoid) {
-        float coherenceFactor = 0.005f;
 
-        Vector3 cohPos = new Vector3();
-
-        if(!otherBoids.isEmpty()) {
-            for (Boid otherBoid : otherBoids) {
-                cohPos.sum(otherBoid.getPosition());
-            }
-
-            cohPos.div(otherBoids.size());
-
-            Vector3 deltaPosition = boid.getDeltaPosition();
-            deltaPosition.setX(deltaPosition.getX() + (cohPos.getX() - boid.getPosition().getX()) * coherenceFactor);
-            deltaPosition.setY(deltaPosition.getY() + (cohPos.getY() - boid.getPosition().getY()) * coherenceFactor);
-            deltaPosition.setZ(deltaPosition.getZ() + (cohPos.getZ() - boid.getPosition().getZ()) * coherenceFactor);
-
-            newBoid.setDeltaPosition(deltaPosition);
-        }
-    }
-
-    private void separation(Boid boid, ArrayList<Boid> otherBoids, Boid newBoid) {
-        float avoidFactor = 0.05f;
-
-        Vector3 sepPos = new Vector3();
-
-        for (Boid otherBoid : otherBoids) {
-            sepPos.setX(boid.getPosition().getX() - otherBoid.getPosition().getX());
-            sepPos.setY(boid.getPosition().getY() - otherBoid.getPosition().getY());
-            sepPos.setZ(boid.getPosition().getZ() - otherBoid.getPosition().getZ());
-        }
-
-        Vector3 deltaPos = boid.getDeltaPosition();
-
-        deltaPos.setX(deltaPos.getX() + sepPos.getX() * avoidFactor);
-        deltaPos.setY(deltaPos.getY() + sepPos.getY() * avoidFactor);
-        deltaPos.setZ(deltaPos.getZ() + sepPos.getZ() * avoidFactor);
-
-        newBoid.setDeltaPosition(deltaPos);
-    }
-
-    private void alignment(Boid boid, ArrayList<Boid> otherBoids, Boid newBoid) {
-        float alignmentFactor = 0.05f;
-
-        Vector3 avgDX = new Vector3();
-
-        if(otherBoids.isEmpty()) return;
-
-        for (Boid otherBoid : otherBoids) {
-            avgDX.sum(otherBoid.getDeltaPosition());
-        }
-
-        avgDX.div(otherBoids.size());
-
-        Vector3 deltaPos = boid.getDeltaPosition();
-
-        deltaPos.setX(deltaPos.getX() + (avgDX.getX() - deltaPos.getX()) * alignmentFactor);
-        deltaPos.setY(deltaPos.getY() + (avgDX.getY() - deltaPos.getY()) * alignmentFactor);
-        deltaPos.setZ(deltaPos.getZ() + (avgDX.getZ() - deltaPos.getZ()) * alignmentFactor);
-
-        newBoid.setDeltaPosition(deltaPos);
-    }
-
-    private void nudgeDesiredSpeed(Boid boid) {
-        float nudgeFactor = 0.05f * Gdx.graphics.getDeltaTime();
-
-        float desiredSpeed = boid.desiredSpeed;
-        Vector3 deltaPos = boid.getDeltaPosition();
-        float speed = (float)Math.sqrt(Math.pow(deltaPos.getX(), 2) + Math.pow(deltaPos.getY(), 2));
-
-        if(speed < desiredSpeed) {
-            deltaPos.sum(Vector3.mul(deltaPos, nudgeFactor));
-        }
-    }
-
-    private void limitSpeed(Boid boid) {
-        float speedLimit = 1000;
-        Vector3 deltaPos = boid.getDeltaPosition();
-        float speed = (float)Math.sqrt(Math.pow(deltaPos.getX(), 2) + Math.pow(deltaPos.getY(), 2));
-
-        if(speed > speedLimit) {
-            deltaPos.setX((deltaPos.getX() / speed) * speedLimit);
-            deltaPos.setY((deltaPos.getY() / speed) * speedLimit);
-            deltaPos.setZ((deltaPos.getZ() / speed) * speedLimit);
-
-            boid.setDeltaPosition(deltaPos);
-        }
-    }
-
-    private void keepWithinBounds(Boid boid) {
-        float margin = 150;
-        float turnFactor = 0.05f;
-
-        Vector3 deltaPos = boid.getDeltaPosition();
-        Vector3 boidPos = boid.getPosition();
-
-        if(boidPos.getX() < margin)
-            deltaPos.setX(deltaPos.getX() + turnFactor);
-        else if (boidPos.getX() > Gdx.graphics.getWidth() - margin)
-            deltaPos.setX(deltaPos.getX() - turnFactor);
-        if(boidPos.getY() < margin)
-            deltaPos.setY(deltaPos.getY() + turnFactor);
-        else if (boidPos.getY() > Gdx.graphics.getHeight() - margin)
-            deltaPos.setY(deltaPos.getY() - turnFactor);
-        if(boidPos.getZ() < margin)
-            deltaPos.setZ(deltaPos.getZ() + turnFactor);
-        else if (boidPos.getZ() > 800 - margin)
-            deltaPos.setZ(deltaPos.getZ() - turnFactor);
-
-        boid.setDeltaPosition(deltaPos);
-    }
 
 
     @Override

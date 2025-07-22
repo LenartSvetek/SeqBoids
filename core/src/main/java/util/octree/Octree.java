@@ -43,92 +43,108 @@ public class Octree<T> {
         point = null;
     }
 
+    public Octree(OctPoint BtmBckLeft, OctPoint TopFntRight) {
+        topFrontRight = new OctPoint(topFrontRight.x, topFrontRight.y, topFrontRight.z);
+        bottomBackLeft = new OctPoint(BtmBckLeft.x, TopFntRight.y, TopFntRight.z);
+
+        octs = new ArrayList<Octree<T>>(Collections.nCopies(8, new Octree<T>()));
+        point = null;
+    }
+
+    public OctPoint GetTopFrontRight() {
+        return topFrontRight;
+    }
+
+    public OctPoint GetBottomBackLeft() {
+        return bottomBackLeft;
+    }
+
     public void insert(int x, int y, int z, T object) {
-        if(topFrontRight.isInBoundsBigger(x, y, z) || bottomBackLeft.isInBoundsSmaller(x, y, z)) return;
+            if(topFrontRight.isInBoundsBigger(x, y, z) || bottomBackLeft.isInBoundsSmaller(x, y, z)) return;
 
-        OctPoint midPoint = OctPoint.getMidPoint(bottomBackLeft, topFrontRight);
-        int oct = getOct(midPoint, x, y, z);
+            OctPoint midPoint = OctPoint.getMidPoint(bottomBackLeft, topFrontRight);
+            int oct = getOct(midPoint, x, y, z);
 
-        Octree<T> _octree = octs.get(oct);
+            Octree<T> _octree = octs.get(oct);
 
-        if(_octree.point == null) {
-            _octree.insert(x, y, z, object);
-            return;
-        }
-        else if(_octree.point.isNull) {
-            octs.set(oct, new Octree<T>(x, y, z, object));
-            return;
-        }
-        else {
-            if(x == _octree.point.x && y == _octree.point.y && z == _octree.point.z) {
-                _octree.objects.add(object);
+            if(_octree.point == null) {
+                _octree.insert(x, y, z, object);
                 return;
             }
-
-            int _x = _octree.point.x;
-            int _y = _octree.point.y;
-            int _z = _octree.point.z;
-            ArrayList<T> _objects = _octree.objects;
-
-            switch (oct) {
-                case OctLocation.TOP_FRONT_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, midPoint.y, midPoint.z, topFrontRight.x, topFrontRight.y, topFrontRight.z));
-                case OctLocation.TOP_FRONT_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, midPoint.y, midPoint.z, midPoint.x, topFrontRight.y, topFrontRight.z));
-                case OctLocation.TOP_BACK_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, bottomBackLeft.y, midPoint.z, midPoint.x, midPoint.y, topFrontRight.z));
-                case OctLocation.TOP_BACK_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, bottomBackLeft.y, midPoint.z, topFrontRight.x, midPoint.y, topFrontRight.z));
-                case OctLocation.BOTTOM_FRONT_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, midPoint.y, bottomBackLeft.z, topFrontRight.x, topFrontRight.y, midPoint.z));
-                case OctLocation.BOTTOM_FRONT_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, midPoint.y, bottomBackLeft.z, midPoint.x, topFrontRight.y, midPoint.z));
-                case OctLocation.BOTTOM_BACK_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z, midPoint.x, midPoint.y, midPoint.z));
-                case OctLocation.BOTTOM_BACK_RIGHT -> octs.set(oct,new Octree<T>(midPoint.x, bottomBackLeft.y, bottomBackLeft.z, topFrontRight.x, midPoint.y, midPoint.z));
+            else if(_octree.point.isNull) {
+                octs.set(oct, new Octree<T>(x, y, z, object));
+                return;
             }
+            else {
+                if(x == _octree.point.x && y == _octree.point.y && z == _octree.point.z) {
+                    _octree.objects.add(object);
+                    return;
+                }
 
-            octs.get(oct).insert(x, y, z, object);
-            octs.get(oct).insert(_x, _y, _z, _objects);
-            return;
-        }
+                int _x = _octree.point.x;
+                int _y = _octree.point.y;
+                int _z = _octree.point.z;
+                ArrayList<T> _objects = _octree.objects;
+
+                switch (oct) {
+                    case OctLocation.TOP_FRONT_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, midPoint.y, midPoint.z, topFrontRight.x, topFrontRight.y, topFrontRight.z));
+                    case OctLocation.TOP_FRONT_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, midPoint.y, midPoint.z, midPoint.x, topFrontRight.y, topFrontRight.z));
+                    case OctLocation.TOP_BACK_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, bottomBackLeft.y, midPoint.z, midPoint.x, midPoint.y, topFrontRight.z));
+                    case OctLocation.TOP_BACK_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, bottomBackLeft.y, midPoint.z, topFrontRight.x, midPoint.y, topFrontRight.z));
+                    case OctLocation.BOTTOM_FRONT_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, midPoint.y, bottomBackLeft.z, topFrontRight.x, topFrontRight.y, midPoint.z));
+                    case OctLocation.BOTTOM_FRONT_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, midPoint.y, bottomBackLeft.z, midPoint.x, topFrontRight.y, midPoint.z));
+                    case OctLocation.BOTTOM_BACK_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z, midPoint.x, midPoint.y, midPoint.z));
+                    case OctLocation.BOTTOM_BACK_RIGHT -> octs.set(oct,new Octree<T>(midPoint.x, bottomBackLeft.y, bottomBackLeft.z, topFrontRight.x, midPoint.y, midPoint.z));
+                }
+
+                octs.get(oct).insert(x, y, z, object);
+                octs.get(oct).insert(_x, _y, _z, _objects);
+                return;
+            }
     }
 
     private void insert(int x, int y, int z, ArrayList<T> objects) {
-        if(topFrontRight.isInBoundsBigger(x, y, z) || bottomBackLeft.isInBoundsSmaller(x, y, z)) return;
+            if(topFrontRight.isInBoundsBigger(x, y, z) || bottomBackLeft.isInBoundsSmaller(x, y, z)) return;
 
-        OctPoint midPoint = OctPoint.getMidPoint(bottomBackLeft, topFrontRight);
-        int oct = getOct(midPoint, x, y, z);
+            OctPoint midPoint = OctPoint.getMidPoint(bottomBackLeft, topFrontRight);
+            int oct = getOct(midPoint, x, y, z);
 
-        Octree<T> _octree = octs.get(oct);
+            Octree<T> _octree = octs.get(oct);
 
-        if(_octree.point == null) {
-            _octree.insert(x, y, z, objects);
-            return;
-        }
-        else if(_octree.point.isNull) {
-            octs.set(oct, new Octree<T>(x, y, z, objects));
-            return;
-        }
-        else {
-            if(x == _octree.point.x && y == _octree.point.y && z == _octree.point.z) {
-                _octree.objects.addAll(objects);
+            if(_octree.point == null) {
+                _octree.insert(x, y, z, objects);
                 return;
             }
-
-            int _x = _octree.point.x;
-            int _y = _octree.point.y;
-            int _z = _octree.point.z;
-            ArrayList<T> _objects = _octree.objects;
-
-            switch (oct) {
-                case OctLocation.TOP_FRONT_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, midPoint.y, midPoint.z, topFrontRight.x, topFrontRight.y, topFrontRight.z));
-                case OctLocation.TOP_FRONT_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, midPoint.y, midPoint.z, midPoint.x, topFrontRight.y, topFrontRight.z));
-                case OctLocation.TOP_BACK_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, bottomBackLeft.y, midPoint.z, midPoint.x, midPoint.y, topFrontRight.z));
-                case OctLocation.TOP_BACK_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, bottomBackLeft.y, midPoint.z, topFrontRight.x, midPoint.y, topFrontRight.z));
-                case OctLocation.BOTTOM_FRONT_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, midPoint.y, bottomBackLeft.z, topFrontRight.x, topFrontRight.y, midPoint.z));
-                case OctLocation.BOTTOM_FRONT_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, midPoint.y, bottomBackLeft.z, midPoint.x, topFrontRight.y, midPoint.z));
-                case OctLocation.BOTTOM_BACK_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z, midPoint.x, midPoint.y, midPoint.z));
-                case OctLocation.BOTTOM_BACK_RIGHT -> octs.set(oct,new Octree<T>(midPoint.x, bottomBackLeft.y, bottomBackLeft.z, topFrontRight.x, midPoint.y, midPoint.z));
+            else if(_octree.point.isNull) {
+                octs.set(oct, new Octree<T>(x, y, z, objects));
+                return;
             }
+            else {
+                if(x == _octree.point.x && y == _octree.point.y && z == _octree.point.z) {
+                    _octree.objects.addAll(objects);
+                    return;
+                }
 
-            octs.get(oct).insert(x, y, z, objects);
-            octs.get(oct).insert(_x, _y, _z, _objects);
-            return;
-        }
+                int _x = _octree.point.x;
+                int _y = _octree.point.y;
+                int _z = _octree.point.z;
+                ArrayList<T> _objects = _octree.objects;
+
+                switch (oct) {
+                    case OctLocation.TOP_FRONT_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, midPoint.y, midPoint.z, topFrontRight.x, topFrontRight.y, topFrontRight.z));
+                    case OctLocation.TOP_FRONT_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, midPoint.y, midPoint.z, midPoint.x, topFrontRight.y, topFrontRight.z));
+                    case OctLocation.TOP_BACK_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, bottomBackLeft.y, midPoint.z, midPoint.x, midPoint.y, topFrontRight.z));
+                    case OctLocation.TOP_BACK_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, bottomBackLeft.y, midPoint.z, topFrontRight.x, midPoint.y, topFrontRight.z));
+                    case OctLocation.BOTTOM_FRONT_RIGHT -> octs.set(oct, new Octree<T>(midPoint.x, midPoint.y, bottomBackLeft.z, topFrontRight.x, topFrontRight.y, midPoint.z));
+                    case OctLocation.BOTTOM_FRONT_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, midPoint.y, bottomBackLeft.z, midPoint.x, topFrontRight.y, midPoint.z));
+                    case OctLocation.BOTTOM_BACK_LEFT -> octs.set(oct, new Octree<T>(bottomBackLeft.x, bottomBackLeft.y, bottomBackLeft.z, midPoint.x, midPoint.y, midPoint.z));
+                    case OctLocation.BOTTOM_BACK_RIGHT -> octs.set(oct,new Octree<T>(midPoint.x, bottomBackLeft.y, bottomBackLeft.z, topFrontRight.x, midPoint.y, midPoint.z));
+                }
+
+                octs.get(oct).insert(x, y, z, objects);
+                octs.get(oct).insert(_x, _y, _z, _objects);
+                return;
+            }
     }
 
     public ArrayList<T> get(int x, int y, int z) {
