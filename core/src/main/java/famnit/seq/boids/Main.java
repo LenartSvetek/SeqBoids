@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
-    static int CPU_CORES = Runtime.getRuntime().availableProcessors();
-    static BoidThread[] THREADS = new BoidThread[CPU_CORES];
+    static int CPU_CORES = Runtime.getRuntime().availableProcessors(); //Runtime.getRuntime().availableProcessors()
+    static Thread[] THREADS = new BoidThread[CPU_CORES];
 
     private SpriteBatch batch;
     private TextureRegion image;
@@ -31,7 +31,7 @@ public class Main extends ApplicationAdapter {
 
     int[] mapSize = {800, 800, 800};
     int bufferZone = 100;
-    int numOfBoids = 500;
+    int numOfBoids = 10000;
 
     @Override
     public void create() {
@@ -78,8 +78,8 @@ public class Main extends ApplicationAdapter {
         process();
 
 
-        octree.foreach(boidIndex -> {
-            Boid obj = boidsArr.get(boidIndex);
+        boidsArr.forEach(obj -> {
+//            Boid obj = boidsArr.get(objboidIndex);
             if(    obj.position.getX() >= -10 && obj.position.getX() <= mapSize[0] + 10
                 && obj.position.getY() >= -10 && obj.position.getY() <= mapSize[1] + 10
             ) {
@@ -97,8 +97,6 @@ public class Main extends ApplicationAdapter {
     private void process() {
         Octree<Integer> newOctree = new Octree<Integer>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
         ArrayList<Boid> newBoidArr = new ArrayList<>();
-        int visualRange = 40;
-        int avoidRange = 20;
 
 
         int numOfBoidsPerThread = Math.ceilDiv(boidsArr.size(), CPU_CORES);
@@ -106,29 +104,54 @@ public class Main extends ApplicationAdapter {
         for (int i = 0; i < CPU_CORES; i++) {
 
             if(i != CPU_CORES - 1)
-                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, (i + 1) * numOfBoidsPerThread, "BoidsThread-"+i, newBoidArr, newOctree);
+                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, (i + 1) * numOfBoidsPerThread, "BoidsThread-"+i);
             else
-                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, boidsArr.size(), "BoidsThread-"+i, newBoidArr, newOctree);
+                THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, boidsArr.size(), "BoidsThread-"+i);
 
 
             THREADS[i].start();
         }
 
+        int offset = 0;
+        OffsetThread[] offsetThreads = new OffsetThread[CPU_CORES];
+
         for(int i = 0; i < CPU_CORES; i++) {
             try {
                 THREADS[i].join();
 
-//                for(Boid boid : THREADS[i].GetBoidsArr()) {
-//                    newBoidArr.add(boid);
-//                    Vector3 pos = boid.getPosition();
-//                    newOctree.insert((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), newBoidArr.size() - 1);
-//                }
+                offset = newBoidArr.size();
+                newBoidArr.addAll(((BoidThread)THREADS[i]).GetBoidsArr());
             }
             catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            Octree<Integer> boidOct = ((BoidThread)THREADS[i]).get_boids();
+            offsetThreads[i] = new OffsetThread(newBoidArr, offset, newBoidArr.size(),"OffsetThread-"+i, boidOct.GetBottomBackLeft(), boidOct.GetTopFrontRight());
+
         }
 
+        for(int i = 0; i < CPU_CORES; i++) {
+            offsetThreads[i].start();
+        }
+
+
+        for (int i = 0; i < CPU_CORES; i++) {
+            try {
+                offsetThreads[i].join();
+
+                newOctree.insert((offsetThreads[i]).get_boids());
+
+//                (offsetThreads[i]).get_boids().foreach((ind, point) -> {
+//                    newOctree.insert(point.get(0), point.get(1), point.get(2), ind);
+//                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        boidsArr = newBoidArr;
+        octree = newOctree;
 
 
 //        octree.foreach(boidIndex -> {
@@ -160,9 +183,6 @@ public class Main extends ApplicationAdapter {
 //            }
 //
 //        });
-
-        octree = newOctree;
-        boidsArr = newBoidArr;
     }
 
 
