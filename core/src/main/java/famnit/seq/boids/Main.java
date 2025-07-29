@@ -47,8 +47,10 @@ public class Main extends ApplicationAdapter {
     float speedLimit = 1000;
 
     int[] mapSize = {800, 800, 800};
-    int bufferZone = 100;
+    int bufferZone = 150;
     int numOfBoids = 5000;
+
+    float turnFactor = 0.05f;
     @Override
     public void create() {
         Gdx.graphics.setWindowedMode(800, 800);
@@ -95,8 +97,8 @@ public class Main extends ApplicationAdapter {
                 bufferZone = settings.getBufferZone();
                 numOfBoids = settings.getNumOfBoids();
                 mapSize = settings.getMapSize();
-
-                octree = new Octree<Boid>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
+                turnFactor = settings.getTurnFactor();
+                octree = new Octree<Boid>(-150, -150, -150, mapSize[0] + 150, mapSize[1] + 150, mapSize[2] + 150);
 
                 Random r = new Random();
                 for(int i = 0; i < numOfBoids; i++) {
@@ -271,23 +273,22 @@ public class Main extends ApplicationAdapter {
     }
 
     private void keepWithinBounds(Boid boid) {
-        float margin = 150;
-        float turnFactor = 0.05f;
+
 
         Vector3 deltaPos = boid.getDeltaPosition();
         Vector3 boidPos = boid.getPosition();
 
-        if(boidPos.getX() < margin)
+        if(boidPos.getX() < bufferZone)
             deltaPos.setX(deltaPos.getX() + turnFactor);
-        else if (boidPos.getX() > Gdx.graphics.getWidth() - margin)
+        else if (boidPos.getX() > Gdx.graphics.getWidth() - bufferZone)
             deltaPos.setX(deltaPos.getX() - turnFactor);
-        if(boidPos.getY() < margin)
+        if(boidPos.getY() < bufferZone)
             deltaPos.setY(deltaPos.getY() + turnFactor);
-        else if (boidPos.getY() > Gdx.graphics.getHeight() - margin)
+        else if (boidPos.getY() > Gdx.graphics.getHeight() - bufferZone)
             deltaPos.setY(deltaPos.getY() - turnFactor);
-        if(boidPos.getZ() < margin)
+        if(boidPos.getZ() < bufferZone)
             deltaPos.setZ(deltaPos.getZ() + turnFactor);
-        else if (boidPos.getZ() > 800 - margin)
+        else if (boidPos.getZ() > 800 - bufferZone)
             deltaPos.setZ(deltaPos.getZ() - turnFactor);
 
         boid.setDeltaPosition(deltaPos);
