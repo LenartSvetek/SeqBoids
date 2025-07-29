@@ -31,7 +31,7 @@ public class Main extends ApplicationAdapter {
 
     int[] mapSize = {800, 800, 800};
     int bufferZone = 100;
-    int numOfBoids = 10000;
+    int numOfBoids = 1000000;
 
     @Override
     public void create() {
@@ -101,7 +101,7 @@ public class Main extends ApplicationAdapter {
 
         int numOfBoidsPerThread = Math.ceilDiv(boidsArr.size(), CPU_CORES);
 
-        for (int i = 0; i < CPU_CORES; i++) {
+        for (int i = 0; i < CPU_CORES && i < boidsArr.size(); i++) {
 
             if(i != CPU_CORES - 1)
                 THREADS[i] = new BoidThread(boidsArr, octree, i * numOfBoidsPerThread, (i + 1) * numOfBoidsPerThread, "BoidsThread-"+i);
@@ -115,7 +115,7 @@ public class Main extends ApplicationAdapter {
         int offset = 0;
         OffsetThread[] offsetThreads = new OffsetThread[CPU_CORES];
 
-        for(int i = 0; i < CPU_CORES; i++) {
+        for(int i = 0; i < CPU_CORES && i < boidsArr.size(); i++) {
             try {
                 THREADS[i].join();
 
@@ -130,12 +130,12 @@ public class Main extends ApplicationAdapter {
 
         }
 
-        for(int i = 0; i < CPU_CORES; i++) {
+        for(int i = 0; i < CPU_CORES && i < boidsArr.size(); i++) {
             offsetThreads[i].start();
         }
 
 
-        for (int i = 0; i < CPU_CORES; i++) {
+        for (int i = 0; i < CPU_CORES && i < boidsArr.size(); i++) {
             try {
                 offsetThreads[i].join();
 
