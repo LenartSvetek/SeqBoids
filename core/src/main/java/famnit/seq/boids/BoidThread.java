@@ -82,7 +82,7 @@ public class BoidThread extends Thread{
 
 
     private void coherence(Boid boid, ArrayList<Boid> otherBoids, Boid newBoid) {
-        float coherenceFactor = 0.005f;
+
 
         Vector3 cohPos = new Vector3();
 
@@ -94,16 +94,16 @@ public class BoidThread extends Thread{
             cohPos.div(otherBoids.size());
 
             Vector3 deltaPosition = boid.getDeltaPosition();
-            deltaPosition.setX(deltaPosition.getX() + (cohPos.getX() - boid.getPosition().getX()) * coherenceFactor);
-            deltaPosition.setY(deltaPosition.getY() + (cohPos.getY() - boid.getPosition().getY()) * coherenceFactor);
-            deltaPosition.setZ(deltaPosition.getZ() + (cohPos.getZ() - boid.getPosition().getZ()) * coherenceFactor);
+            deltaPosition.setX(deltaPosition.getX() + (cohPos.getX() - boid.getPosition().getX()) * BoidsValues.coherenceFactor);
+            deltaPosition.setY(deltaPosition.getY() + (cohPos.getY() - boid.getPosition().getY()) * BoidsValues.coherenceFactor);
+            deltaPosition.setZ(deltaPosition.getZ() + (cohPos.getZ() - boid.getPosition().getZ()) * BoidsValues.coherenceFactor);
 
             newBoid.setDeltaPosition(deltaPosition);
         }
     }
 
     private void separation(Boid boid, ArrayList<Boid> otherBoids, Boid newBoid) {
-        float avoidFactor = 0.05f;
+
 
         Vector3 sepPos = new Vector3();
 
@@ -115,15 +115,15 @@ public class BoidThread extends Thread{
 
         Vector3 deltaPos = boid.getDeltaPosition();
 
-        deltaPos.setX(deltaPos.getX() + sepPos.getX() * avoidFactor);
-        deltaPos.setY(deltaPos.getY() + sepPos.getY() * avoidFactor);
-        deltaPos.setZ(deltaPos.getZ() + sepPos.getZ() * avoidFactor);
+        deltaPos.setX(deltaPos.getX() + sepPos.getX() * BoidsValues.avoidFactor);
+        deltaPos.setY(deltaPos.getY() + sepPos.getY() * BoidsValues.avoidFactor);
+        deltaPos.setZ(deltaPos.getZ() + sepPos.getZ() * BoidsValues.avoidFactor);
 
         newBoid.setDeltaPosition(deltaPos);
     }
 
     private void alignment(Boid boid, ArrayList<Boid> otherBoids, Boid newBoid) {
-        float alignmentFactor = 0.05f;
+
 
         Vector3 avgDX = new Vector3();
 
@@ -137,60 +137,57 @@ public class BoidThread extends Thread{
 
         Vector3 deltaPos = boid.getDeltaPosition();
 
-        deltaPos.setX(deltaPos.getX() + (avgDX.getX() - deltaPos.getX()) * alignmentFactor);
-        deltaPos.setY(deltaPos.getY() + (avgDX.getY() - deltaPos.getY()) * alignmentFactor);
-        deltaPos.setZ(deltaPos.getZ() + (avgDX.getZ() - deltaPos.getZ()) * alignmentFactor);
+        deltaPos.setX(deltaPos.getX() + (avgDX.getX() - deltaPos.getX()) * BoidsValues.alignmentFactor);
+        deltaPos.setY(deltaPos.getY() + (avgDX.getY() - deltaPos.getY()) * BoidsValues.alignmentFactor);
+        deltaPos.setZ(deltaPos.getZ() + (avgDX.getZ() - deltaPos.getZ()) * BoidsValues.alignmentFactor);
 
         newBoid.setDeltaPosition(deltaPos);
     }
 
     private void nudgeDesiredSpeed(Boid boid) {
-        float nudgeFactor = 0.05f * Gdx.graphics.getDeltaTime();
+
 
         float desiredSpeed = boid.desiredSpeed;
         Vector3 deltaPos = boid.getDeltaPosition();
         float speed = (float)Math.sqrt(Math.pow(deltaPos.getX(), 2) + Math.pow(deltaPos.getY(), 2));
 
         if(speed < desiredSpeed) {
-            deltaPos.sum(Vector3.mul(deltaPos, nudgeFactor));
+            deltaPos.sum(Vector3.mul(deltaPos, BoidsValues.nudgeFactor * Gdx.graphics.getDeltaTime()));
         }
 
         boid.setDeltaPosition(deltaPos);
     }
 
     private void limitSpeed(Boid boid) {
-        float speedLimit = 1000;
+
         Vector3 deltaPos = boid.getDeltaPosition();
         float speed = (float)Math.sqrt(Math.pow(deltaPos.getX(), 2) + Math.pow(deltaPos.getY(), 2));
 
-        if(speed > speedLimit) {
-            deltaPos.setX((deltaPos.getX() / speed) * speedLimit);
-            deltaPos.setY((deltaPos.getY() / speed) * speedLimit);
-            deltaPos.setZ((deltaPos.getZ() / speed) * speedLimit);
+        if(speed > BoidsValues.speedLimit) {
+            deltaPos.setX((deltaPos.getX() / speed) * BoidsValues.speedLimit);
+            deltaPos.setY((deltaPos.getY() / speed) * BoidsValues.speedLimit);
+            deltaPos.setZ((deltaPos.getZ() / speed) * BoidsValues.speedLimit);
 
             boid.setDeltaPosition(deltaPos);
         }
     }
 
     private void keepWithinBounds(Boid boid) {
-        float margin = 150;
-        float turnFactor = 0.05f;
-
         Vector3 deltaPos = boid.getDeltaPosition();
         Vector3 boidPos = boid.getPosition();
 
-        if(boidPos.getX() < margin)
-            deltaPos.setX(deltaPos.getX() + turnFactor);
-        else if (boidPos.getX() > Gdx.graphics.getWidth() - margin)
-            deltaPos.setX(deltaPos.getX() - turnFactor);
-        if(boidPos.getY() < margin)
-            deltaPos.setY(deltaPos.getY() + turnFactor);
-        else if (boidPos.getY() > Gdx.graphics.getHeight() - margin)
-            deltaPos.setY(deltaPos.getY() - turnFactor);
-        if(boidPos.getZ() < margin)
-            deltaPos.setZ(deltaPos.getZ() + turnFactor);
-        else if (boidPos.getZ() > 800 - margin)
-            deltaPos.setZ(deltaPos.getZ() - turnFactor);
+        if(boidPos.getX() < BoidsValues.margin)
+            deltaPos.setX(deltaPos.getX() + BoidsValues.turnFactor);
+        else if (boidPos.getX() > BoidsValues.mapSize[0] - BoidsValues.margin)
+            deltaPos.setX(deltaPos.getX() - BoidsValues.turnFactor);
+        if(boidPos.getY() < BoidsValues.margin)
+            deltaPos.setY(deltaPos.getY() + BoidsValues.turnFactor);
+        else if (boidPos.getY() > BoidsValues.mapSize[1] - BoidsValues.margin)
+            deltaPos.setY(deltaPos.getY() - BoidsValues.turnFactor);
+        if(boidPos.getZ() < BoidsValues.margin)
+            deltaPos.setZ(deltaPos.getZ() + BoidsValues.turnFactor);
+        else if (boidPos.getZ() > BoidsValues.mapSize[2] - BoidsValues.margin)
+            deltaPos.setZ(deltaPos.getZ() - BoidsValues.turnFactor);
 
         boid.setDeltaPosition(deltaPos);
     }
