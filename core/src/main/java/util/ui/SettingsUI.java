@@ -1,11 +1,8 @@
 package util.ui;
 
-import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 public class SettingsUI {
@@ -26,6 +23,9 @@ public class SettingsUI {
 
     NumberBox bufferUI;
     int bufferZone = 100;
+
+    NumberBox turnUI;
+    float turnFactor = 0.05f;
 
     NumberBox numUI;
     int numOfBoids = 5000;
@@ -49,8 +49,9 @@ public class SettingsUI {
         mapYUI = new NumberBox(shapeRenderer, font, 10, Gdx.graphics.getHeight() - 160, 150, 30, "mapY: ", mapSize[1]);
         mapZUI = new NumberBox(shapeRenderer, font, 10, Gdx.graphics.getHeight() - 200, 150, 30, "mapZ: ", mapSize[2]);
         bufferUI = new NumberBox(shapeRenderer, font, 10, Gdx.graphics.getHeight() - 240, 150, 30, "buffer: ", bufferZone);
-        numUI = new NumberBox(shapeRenderer, font, 10, Gdx.graphics.getHeight() - 280, 150, 30, "num of boids: ", numOfBoids);
-        btn = new Button(shapeRenderer, font, 160, Gdx.graphics.getHeight() - 320, 150, 30, "Continue", (obj) -> {
+        turnUI = new NumberBox(shapeRenderer, font, 10, Gdx.graphics.getHeight() - 280, 150, 30, "TurnFactor(/100): ", 5);
+        numUI = new NumberBox(shapeRenderer, font, 10, Gdx.graphics.getHeight() - 320, 150, 30, "num of boids: ", numOfBoids);
+        btn = new Button(shapeRenderer, font, 160, Gdx.graphics.getHeight() - 360, 150, 30, "Continue", (obj) -> {
             isFinnished = true;
         });
     }
@@ -62,6 +63,7 @@ public class SettingsUI {
         mapYUI.update();
         mapZUI.update();
         bufferUI.update();
+        turnUI.update();
         numUI.update();
         btn.update();
     }
@@ -73,6 +75,7 @@ public class SettingsUI {
         mapYUI.draw();
         mapZUI.draw();
         bufferUI.draw();
+        turnUI.draw();
         numUI.draw();
         btn.draw();
     }
@@ -95,5 +98,9 @@ public class SettingsUI {
 
     public int getNumOfBoids() {
         return numUI.getValue();
+    }
+
+    public float getTurnFactor() {
+        return turnUI.getValue() / 100.f;
     }
 }
