@@ -5,6 +5,7 @@ import util.math.vector.Vector3;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -34,7 +35,7 @@ public class Octree<T> {
     Octree(int x, int y, int z, T object) {
         point = new OctPoint(x, y, z);
 
-        objects = new ArrayList<>(1);
+        objects = new ArrayList<T>();
         objects.add(object);
     }
 
@@ -48,9 +49,10 @@ public class Octree<T> {
         topFrontRight = new OctPoint(xh, yh, zh);
         bottomBackLeft = new OctPoint(xl, yl, zl);
 
-        octs = new ArrayList<>(8);
+        octs = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
             octs.add(new Octree<>());
+
         }
 
         point = null;
@@ -60,7 +62,7 @@ public class Octree<T> {
         topFrontRight = new OctPoint(TopFntRight.x, TopFntRight.y, TopFntRight.z);
         bottomBackLeft = new OctPoint(BtmBckLeft.x, BtmBckLeft.y, BtmBckLeft.z);
 
-        octs = new ArrayList<>(8);
+        octs = new ArrayList<>();
         for (int i = 0; i < 8; i++) {
             octs.add(new Octree<>());
         }
@@ -229,7 +231,6 @@ public class Octree<T> {
                     int _x = currSOct.point.x;
                     int _y = currSOct.point.y;
                     int _z = currSOct.point.z;
-                    ArrayList<T> _objects = currSOct.objects;
 
                     OctPoint midPoint = OctPoint.getMidPoint(bottomBackLeft, topFrontRight);
                     int oct = getOct(midPoint, _x, _y, _z);

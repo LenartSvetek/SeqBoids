@@ -17,12 +17,16 @@ import util.math.vector.Vector3;
 import util.ui.SettingsUI;
 import util.ui.Slider;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.stream.Collectors;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
+    float timeElapsed = 0.0f;
+    BigInteger frames = BigInteger.ZERO;
+
     SettingsUI settings;
 
     static int CPU_CORES = Runtime.getRuntime().availableProcessors(); //Runtime.getRuntime().availableProcessors()
@@ -37,7 +41,7 @@ public class Main extends ApplicationAdapter {
 
     int[] mapSize = {800, 800, 800};
     int bufferZone = 100;
-    int numOfBoids = 10000;
+    int numOfBoids = 50000;
 
     Slider coherenceUI;
     Slider avoidUI;
@@ -54,6 +58,23 @@ public class Main extends ApplicationAdapter {
 
             settings = new SettingsUI();
         }
+        else {
+            octree = new Octree<Integer>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
+            boidsArr = new ArrayList<Boid>(numOfBoids);
+
+            Random r = new Random();
+            for(int i = 0; i < numOfBoids; i++) {
+                int _x = r.nextInt(150, mapSize[0] - 150);
+                int _y = r.nextInt(150, mapSize[1] - 150);
+                int _z = r.nextInt(150, mapSize[2] - 150);
+
+                EulerAngles q = new EulerAngles(r.nextInt(360), r.nextInt(360), r.nextInt(360));
+
+                octree.insert(_x, _y, _z, i);
+                boidsArr.add(new Boid(_x, _y, _z, q));
+
+            }
+        }
 
 /*
         EulerAngles q = new EulerAngles();
@@ -66,13 +87,11 @@ public class Main extends ApplicationAdapter {
 */
 
 
-
-
     }
 
     @Override
     public void render() {
-        if(settings != null) {
+        if(Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop && settings != null) {
             ScreenUtils.clear(0, 0, 0, 1f);
             settings.updateUI();
             settings.render();
@@ -112,11 +131,23 @@ public class Main extends ApplicationAdapter {
             return;
         }
 
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
-        batch.begin();
 
         process();
 
+        timeElapsed += Gdx.graphics.getDeltaTime();
+        if(timeElapsed >= 10f){
+            System.out.println(frames + " frames painted");
+            Gdx.app.exit();
+        }
+
+        frames = frames.add(BigInteger.ONE);
+
+        if(Gdx.app.getType() == Application.ApplicationType.HeadlessDesktop) return;
+
+
+
+        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+        batch.begin();
 
         boidsArr.forEach(obj -> {
 //            Boid obj = boidsArr.get(objboidIndex);
@@ -136,7 +167,7 @@ public class Main extends ApplicationAdapter {
         font.draw(batch, "Coherence: " + BoidsValues.coherenceFactor, 30, 40);
         font.draw(batch, "Avoid: " + BoidsValues.avoidFactor, 240, 40);
         font.draw(batch, "Alignment: " + BoidsValues.alignmentFactor, 450, 40);
-
+        font.draw(batch, "FPS=" + Gdx.graphics.getFramesPerSecond(), 0, Gdx.graphics.getHeight() - 10);
         batch.end();
 
         coherenceUI.draw();
@@ -146,15 +177,16 @@ public class Main extends ApplicationAdapter {
 
     private void process() {
 
-        coherenceUI.update();
-        BoidsValues.coherenceFactor = coherenceUI.getSliderValue();
+        if(Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
+            coherenceUI.update();
+            BoidsValues.coherenceFactor = coherenceUI.getSliderValue();
 
-        avoidUI.update();
-        BoidsValues.avoidFactor = avoidUI.getSliderValue();
+            avoidUI.update();
+            BoidsValues.avoidFactor = avoidUI.getSliderValue();
 
-        alignmentUI.update();
-        BoidsValues.alignmentFactor = alignmentUI.getSliderValue();
-
+            alignmentUI.update();
+            BoidsValues.alignmentFactor = alignmentUI.getSliderValue();
+        }
         Octree<Integer> newOctree = new Octree<Integer>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
         ArrayList<Boid> newBoidArr = new ArrayList<>();
 
