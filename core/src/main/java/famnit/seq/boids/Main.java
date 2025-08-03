@@ -19,12 +19,15 @@ import util.ui.Slider;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
     float timeElapsed = 0.0f;
+    Set<Integer> reportedMilestones = new HashSet<>(); // new set to track reported times
     BigInteger frames = BigInteger.ZERO;
 
     SettingsUI settings;
@@ -135,9 +138,16 @@ public class Main extends ApplicationAdapter {
         process();
 
         timeElapsed += Gdx.graphics.getDeltaTime();
-        if(timeElapsed >= 10f){
-            System.out.println(frames + " frames painted");
-            Gdx.app.exit();
+        int[] milestones = {10, 30, 60, 300, 600};
+        for (int milestone : milestones) {
+            if ((int) timeElapsed >= milestone && !reportedMilestones.contains(milestone)) {
+                if (Gdx.app.getType() == Application.ApplicationType.HeadlessDesktop) {
+                    System.out.println(frames + " frames painted at " + milestone + " seconds");
+                    reportedMilestones.add(milestone);
+                    if (milestone == 600)
+                        Gdx.app.exit();
+                }
+            }
         }
 
         frames = frames.add(BigInteger.ONE);
