@@ -18,11 +18,16 @@ import util.math.vector.Vector3;
 import util.ui.SettingsUI;
 import util.ui.Slider;
 
-import java.util.ArrayList;
-import java.util.Random;
+import java.math.BigInteger;
+import java.util.*;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
+    float timeElapsed = 0.0f;
+    Set<Integer> reportedMilestones = new HashSet<>(); // new set to track reported times
+
+    BigInteger frames = BigInteger.ZERO;
+
     SettingsUI settings;
 
     private SpriteBatch batch;
@@ -44,17 +49,16 @@ public class Main extends ApplicationAdapter {
 
     float nudgeFactor = 0.05f;
 
-    float speedLimit = 1000;
+    float speedLimit = 100;
 
     int[] mapSize = {800, 800, 800};
+    int marginZone = 1000;
     int bufferZone = 150;
-    int numOfBoids = 5000;
+    int numOfBoids = 50000;
 
-    float turnFactor = 0.05f;
+    float turnFactor = 100f;
     @Override
     public void create() {
-        Gdx.graphics.setWindowedMode(800, 800);
-        Gdx.gl.glViewport(0, 0, 800, 800);
 
         if(Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop){
             batch = new SpriteBatch();
@@ -68,6 +72,19 @@ public class Main extends ApplicationAdapter {
             alignmentUI = new Slider(Gdx.graphics.getWidth() - 20 - 200, 10, 200, 10, alignmentFactor, 0.001f, 0.1f, "Coherence", shapeRenderer);
 
             settings = new SettingsUI();
+        } else {
+            octree = new Octree<Boid>(-marginZone, -marginZone, -marginZone, mapSize[0] + marginZone, mapSize[1] + marginZone, mapSize[2] + marginZone);
+
+            Random r = new Random();
+            for(int i = 0; i < numOfBoids; i++) {
+                int _x = r.nextInt(bufferZone, mapSize[0] - bufferZone);
+                int _y = r.nextInt(bufferZone, mapSize[1] - bufferZone);
+                int _z = r.nextInt(bufferZone, mapSize[2] - bufferZone);
+
+                EulerAngles q = new EulerAngles(r.nextInt(360), r.nextInt(360), r.nextInt(360));
+
+                octree.insert(_x, _y, _z, new Boid(_x, _y, _z, q));
+            }
         }
 
 /*
@@ -85,9 +102,12 @@ public class Main extends ApplicationAdapter {
 
     }
 
+    boolean waitFor = false;
+
     @Override
     public void render() {
-        if(settings != null) {
+
+        if(Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop && settings != null) {
             ScreenUtils.clear(0, 0, 0, 1f);
             settings.updateUI();
             settings.render();
@@ -98,13 +118,13 @@ public class Main extends ApplicationAdapter {
                 numOfBoids = settings.getNumOfBoids();
                 mapSize = settings.getMapSize();
                 turnFactor = settings.getTurnFactor();
-                octree = new Octree<Boid>(-150, -150, -150, mapSize[0] + 150, mapSize[1] + 150, mapSize[2] + 150);
+                octree = new Octree<Boid>(-marginZone, -marginZone, -marginZone, mapSize[0] + marginZone, mapSize[1] + marginZone, mapSize[2] + marginZone);
 
                 Random r = new Random();
                 for(int i = 0; i < numOfBoids; i++) {
-                    int _x = r.nextInt(150, mapSize[0] - 150);
-                    int _y = r.nextInt(150, mapSize[1] - 150);
-                    int _z = r.nextInt(150, mapSize[2] - 150);
+                    int _x = r.nextInt(bufferZone, mapSize[0] - bufferZone);
+                    int _y = r.nextInt(bufferZone, mapSize[1] - bufferZone);
+                    int _z = r.nextInt(bufferZone, mapSize[2] - bufferZone);
 
                     EulerAngles q = new EulerAngles(r.nextInt(360), r.nextInt(360), r.nextInt(360));
 
@@ -116,7 +136,28 @@ public class Main extends ApplicationAdapter {
             return;
         }
 
+
         process();
+        timeElapsed += Gdx.graphics.getDeltaTime();
+        int[] milestones = {10, 30, 60, 300, 600};
+        for (int milestone : milestones) {
+            if ((int) timeElapsed >= milestone && !reportedMilestones.contains(milestone)) {
+                if (Gdx.app.getType() == Application.ApplicationType.HeadlessDesktop) {
+                    System.out.println(frames + " frames painted at " + milestone + " seconds");
+                    reportedMilestones.add(milestone);
+                    if (milestone == 600)
+                        Gdx.app.exit();
+                }
+            }
+        }
+
+        frames = frames.add(BigInteger.ONE);
+
+        if(Gdx.app.getType() == Application.ApplicationType.HeadlessDesktop) return;
+
+
+
+
 
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
         batch.begin();
@@ -135,7 +176,7 @@ public class Main extends ApplicationAdapter {
             }
         });
         font.setColor(Color.WHITE);
-//        font.draw(batch, "Upper left, FPS=" + Gdx.graphics.getFramesPerSecond(), 0, 10);
+        font.draw(batch, "FPS=" + Gdx.graphics.getFramesPerSecond(), 0, Gdx.graphics.getHeight() - 10);
 
 
         font.draw(batch, "Coherence: " + coherenceFactor, 30, 40);
@@ -154,15 +195,16 @@ public class Main extends ApplicationAdapter {
     private void process() {
         Octree<Boid> newOctree = new Octree<Boid>(-bufferZone, -bufferZone, -bufferZone, mapSize[0] + bufferZone, mapSize[1] + bufferZone, mapSize[2] + bufferZone);
 
-        coherenceUI.update();
-        coherenceFactor = coherenceUI.getSliderValue();
+        if(Gdx.app.getType() != Application.ApplicationType.HeadlessDesktop) {
+            coherenceUI.update();
+            coherenceFactor = coherenceUI.getSliderValue();
 
-        avoidUI.update();
-        avoidFactor = avoidUI.getSliderValue();
+            avoidUI.update();
+            avoidFactor = avoidUI.getSliderValue();
 
-        alignmentUI.update();
-        alignmentFactor = alignmentUI.getSliderValue();
-
+            alignmentUI.update();
+            alignmentFactor = alignmentUI.getSliderValue();
+        }
 
         int visualRange = 40;
         int avoidRange = 20;
@@ -172,8 +214,8 @@ public class Main extends ApplicationAdapter {
 
             Boid newBoid = new Boid(boid);
 
-            ArrayList<Boid> otherBoids = octree.getNeighbors((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), visualRange);
-            ArrayList<Boid> tooClose = octree.getNeighbors((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), avoidRange);
+            LinkedList<Boid> otherBoids = octree.getNeighbors((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), visualRange);
+            LinkedList<Boid> tooClose = octree.getNeighbors((int)pos.getX(), (int)pos.getY(), (int)pos.getZ(), avoidRange);
 
             coherence(boid, otherBoids, newBoid);
             separation(boid, tooClose, newBoid);
@@ -192,7 +234,7 @@ public class Main extends ApplicationAdapter {
 
     }
 
-    private void coherence(Boid boid, ArrayList<Boid> otherBoids, Boid newBoid) {
+    private void coherence(Boid boid, LinkedList<Boid> otherBoids, Boid newBoid) {
         Vector3 cohPos = new Vector3();
 
         if(!otherBoids.isEmpty()) {
@@ -211,7 +253,7 @@ public class Main extends ApplicationAdapter {
         }
     }
 
-    private void separation(Boid boid, ArrayList<Boid> otherBoids, Boid newBoid) {
+    private void separation(Boid boid, LinkedList<Boid> otherBoids, Boid newBoid) {
         Vector3 sepPos = new Vector3();
 
         for (Boid otherBoid : otherBoids) {
@@ -229,7 +271,7 @@ public class Main extends ApplicationAdapter {
         newBoid.setDeltaPosition(deltaPos);
     }
 
-    private void alignment(Boid boid, ArrayList<Boid> otherBoids, Boid newBoid) {
+    private void alignment(Boid boid, LinkedList<Boid> otherBoids, Boid newBoid) {
         Vector3 avgDX = new Vector3();
 
         if(otherBoids.isEmpty()) return;
